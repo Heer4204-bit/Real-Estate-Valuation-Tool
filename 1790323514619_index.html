@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real Estate Price Predictor</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --accent-green: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 30px 15px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: var(--text-muted);
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 25px;
+    }
+
+    @media (min-width: 768px) {
+      .app-layout {
+        grid-template-columns: 3fr 2fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .range-header {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 10px;
+    }
+
+    .submit-btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .result-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      min-height: 250px;
+    }
+
+    .price-display {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--accent-green);
+      margin: 15px 0 5px 0;
+    }
+
+    .confidence {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .breakdown {
+      width: 100%;
+      margin-top: 25px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 15px;
+      font-size: 0.875rem;
+      text-align: left;
+    }
+
+    .breakdown-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .breakdown-item span:nth-child(2) {
+      font-weight: 600;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Real Estate Valuation Tool</h1>
+      <p>Estimate property market value using key feature metrics</p>
+    </header>
+
+    <div class="app-layout">
+      <!-- Input Form Panel -->
+      <section class="card">
+        <form id="predictorForm" onsubmit="calculatePrice(event)">
+          
+          <div class="form-group">
+            <label for="location">Neighborhood Location</label>
+            <select id="location" class="form-control" required>
+              <option value="1.0">Suburbs / Rural ($)</option>
+              <option value="1.3" selected>Midtown / Residential ($$)</option>               <option value="1.7">Downtown Core ($$$)</option>               <option value="2.1">Waterfront / Prime Luxury ($$$$)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="area">Property Size (Sq. Ft.)</label>
+            <input type="number" id="area" class="form-control" placeholder="e.g. 1800" min="200" max="10000" required value="1500">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bedrooms">Bedrooms</label>
+              <input type="number" id="bedrooms" class="form-control" min="1" max="10" required value="3">
+            </div>
+            <div class="form-group">
+              <label for="bathrooms">Bathrooms</label>
+              <input type="number" id="bathrooms" class="form-control" min="1" max="10" step="0.5" required value="2">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="range-header">
+              <label for="condition">Property Condition</label>
+              <span id="conditionValue" style="font-size:0.85rem; font-weight:bold;">Good (3)</span>
+            </div>
+            <input type="range" id="condition" class="form-control" min="1" max="5" value="3" oninput="updateConditionLabel(this.value)">
+          </div>
+
+          <div class="form-group">
+            <label for="propertyType">Property Type</label>
+            <select id="propertyType" class="form-control">
+              <option value="1.0">Single Family Home</option>
+              <option value="0.85">Condo / Apartment</option>
+              <option value="0.95">Townhouse</option>
+            </select>
+          </div>
+
+          <button type="submit" class="submit-btn">Estimate Valuation</button>
+        </form>
+      </section>
+
+      <!-- Output Panel -->
+      <section class="card result-container">
+        <div id="placeholderText">
+          <p style="color: var(--text-muted);">Fill in the property parameters and click <strong>Estimate Valuation</strong> to view predicted price.</p>
+        </div>
+
+        <div id="resultContent" class="hidden">
+          <h3>Estimated Market Value</h3>
+          <div class="price-display" id="predictedPrice">$0</div>
+          <p class="confidence">Estimated Range: <span id="priceRange">$0 - $0</span></p>
+
+          <div class="breakdown">
+            <div class="breakdown-item">
+              <span>Estimated Rate:</span>
+              <span id="ratePerSqFt">$0 / sq. ft.</span>
+            </div>
+            <div class="breakdown-item">
+              <span>Location Multiplier:</span>
+              <span id="locationFactor">1.0x</span>
+            </div>
+            <div class="breakdown-item">
+              <span>Condition Factor:</span>
+              <span id="conditionFactor">1.0x</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const conditionLabels = {
+      1: "Fixer-Upper (1)",
+      2: "Fair (2)",
+      3: "Good (3)",
+      4: "Excellent (4)",
+      5: "Newly Renovated / New Build (5)"
+    };
+
+    function updateConditionLabel(val) {
+      document.getElementById('conditionValue').textContent = conditionLabels[val];
+    }
+
+    function calculatePrice(event) {
+      event.preventDefault();
+
+      // Retrieve Inputs
+      const locationMultiplier = parseFloat(document.getElementById('location').value);
+      const area = parseFloat(document.getElementById('area').value);
+      const bedrooms = parseInt(document.getElementById('bedrooms').value);
+      const bathrooms = parseFloat(document.getElementById('bathrooms').value);
+      const condition = parseInt(document.getElementById('condition').value);
+      const propertyTypeMultiplier = parseFloat(document.getElementById('propertyType').value);
+
+      // Base Calculation Heuristic (Simulated Regression Model)
+      const basePricePerSqFt = 150;
+      const conditionMultiplier = 0.85 + (condition * 0.075); // Range: ~0.92x to 1.22x
+      
+      const bedroomValue = bedrooms * 15000;
+      const bathroomValue = bathrooms * 12000;
+
+      // Price Equation
+      let estimatedPrice = (area * basePricePerSqFt + bedroomValue + bathroomValue) 
+                           * locationMultiplier 
+                           * conditionMultiplier 
+                           * propertyTypeMultiplier;
+
+      // Price formatting helper
+      const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+
+      // Value Bounds (+/- 5% tolerance window)
+      const minVal = estimatedPrice * 0.95;
+      const maxVal = estimatedPrice * 1.05;
+      const pricePerSqFt = estimatedPrice / area;
+
+      // Update UI
+      document.getElementById('placeholderText').classList.add('hidden');
+      document.getElementById('resultContent').classList.remove('hidden');
+
+      document.getElementById('predictedPrice').textContent = formatCurrency(estimatedPrice);
+      document.getElementById('priceRange').textContent = `${formatCurrency(minVal)} - ${formatCurrency(maxVal)}`;
+      document.getElementById('ratePerSqFt').textContent = `${formatCurrency(pricePerSqFt)}/sq ft`;
+      document.getElementById('locationFactor').textContent = `${locationMultiplier}x`;
+      document.getElementById('conditionFactor').textContent = `${conditionMultiplier.toFixed(2)}x`;
+    }
+  </script>
+
+</body>
+</html>
